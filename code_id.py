@@ -1,76 +1,105 @@
-# from PIL import Image, ImageDraw, ImageFont
 # import csv
+# import os
+# from reportlab.lib.pagesizes import letter
+# from reportlab.pdfgen import canvas
+# from PIL import Image
 
-# def create_id_card(template_path, photo_path, name, position, output_path):
-#     # Load the ID card template
-#     id_card = Image.open(template_path)
+# def create_id_pdf(template_path, csv_file_path, photo_directory, output_path):
+#     try:
+#         employee_data = []
 
-#     # Load the user's photo
-#     photo = Image.open(photo_path)
+#         with open(csv_file_path, 'r') as csvfile:
+#             reader = csv.DictReader(csvfile)
+#             for row in reader:
+#                 employee_data.append(row)
 
-#     # Resize the photo to fit the ID card template
-#     photo = photo.resize((100, 100))  # Adjust size as needed
+#         pdf_doc = canvas.Canvas(output_path, pagesize=letter)
 
-#     # Paste the photo onto the ID card template
-#     id_card.paste(photo, (20, 20))  # Adjust coordinates as needed
+#         for employee in employee_data:
+#             template = Image.open(template_path)
+#             pdf_doc.drawImage(template_path, 0, 0, width=template.width, height=template.height)
 
-#     # Draw the text onto the ID card
-#     draw = ImageDraw.Draw(id_card)
-#     font = ImageFont.truetype('arial.ttf', size=30)  # Adjust font and size as needed
-#     draw.text((150, 20), name, fill='black', font=font)  # Adjust coordinates as needed
-#     draw.text((150, 70), position, fill='black', font=font)  # Adjust coordinates as needed
+#             photo_path = os.path.join(photo_directory, employee['photo_path'])
+#             photo = Image.open(photo_path)
+#             pdf_doc.drawImage(photo_path, 175, 19, width=122, height=120)  # Adjust coordinates and dimensions as needed
 
-#     # Save the final ID card
-#     id_card.save(output_path)
+#             name = employee['name']
+#             title = employee['position']
 
-# # Read the CSV file
-# with open('employees.csv', 'r') as file:
-#     reader = csv.reader(file)
-#     next(reader)  # Skip the header row
-#     for row in reader:
-#         name, position, photo_path = row
-#         output_path = f'{name}_id_card.png'
-#         create_id_card('id_template.png', photo_path, name, position, output_path)
+#             pdf_doc.setFont("Helvetica", 12)
+#             pdf_doc.drawString(110, 180, name)  # Adjust coordinates as needed
+#             pdf_doc.drawString(90, 200, title)  # Adjust coordinates as needed
+
+#             pdf_doc.showPage()
+
+#         pdf_doc.save()
+#         print('PDF created successfully!')
+#     except Exception as error:
+#         print('Error:', error)
+
+# # Usage example
+# template_path = './public/id_template.png'
+# csv_file_path = './employees.csv'
+# photo_directory = './images'
+# output_path = 'output_id_cards.pdf'
+
+# create_id_pdf(template_path, csv_file_path, photo_directory, output_path)
 
 
-from PIL import Image, ImageDraw, ImageFont
-from reportlab.pdfgen import canvas
+import os
 import csv
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
+from PIL import Image, ImageDraw, ImageFont
 
-def create_id_card(template_path, photo_path, name, position):
-    # Load the ID card template
-    id_card = Image.open(template_path)
+def create_id_pdf(template_path, csv_file_path, photo_directory, output_path):
+    try:
+        # Load template image
+        template = Image.open(template_path)
 
-    # Load the user's photo
-    photo = Image.open(photo_path)
+        # Load CSV data
+        employee_data = []
+        with open(csv_file_path, 'r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                employee_data.append(row)
 
-    # Resize the photo to fit the ID card template
-    photo = photo.resize((80, 50))  # Adjust size as needed
+        # Create PDF document
+        c = canvas.Canvas(output_path, pagesize=letter)
 
-    # Paste the photo onto the ID card template
-    id_card.paste(photo, (200, 80))  # Adjust coordinates as needed
+        for employee in employee_data:
+            # Draw template on page
+            c.drawImage(template_path, 0, 0, width=template.width, height=template.height)
 
-    # Draw the text onto the ID card
-    draw = ImageDraw.Draw(id_card)
-    font = ImageFont.truetype('arial.ttf', size=30)  # Adjust font and size as needed
-    draw.text((120, 165), name, fill='black', font=font)  # Adjust coordinates as needed
-    draw.text((120, 200), position, fill='black', font=font)  # Adjust coordinates as needed
+            # Load employee photo
+            photo_path = os.path.join(photo_directory, employee['photo_path'])
+            photo = Image.open(photo_path)
 
-    return id_card
+            # Draw photo on page
+            c.drawImage(photo_path, 175, 65, width=122, height=120)
 
-# Create a new PDF
-c = canvas.Canvas("output_id_cards.pdf")
+            # Draw employee name
+            c.setFont("Helvetica", 18)
+            c.drawString(110, 10, employee['name'])
 
-# Read the CSV file
-with open('employees.csv', 'r') as file:
-    reader = csv.reader(file)
-    next(reader)  # Skip the header row
-    for row in reader:
-        name, position, photo_path = row
-        id_card = create_id_card('id_template.png', photo_path, name, position)
-        id_card.save('temp_id_card.png')
-        c.drawImage('temp_id_card.png', 0, 0, width=595, height=842)  # A4 size in points
-        c.showPage()
+            # Draw employee position
+            c.setFont("Helvetica", 18)
+            c.drawString(90, 25, employee['position'])
 
-# Save the PDF
-c.save()
+            # Add new page for the next employee
+            c.showPage()
+
+        # Save PDF document
+        c.save()
+        print('PDF created successfully!')
+    except Exception as e:
+        print('Error:', e)
+
+# Usage example
+template_path = './public/id_template.png'
+csv_file_path = './employees.csv'
+photo_directory = './images'
+output_path = 'output_id_cards.pdf'
+
+create_id_pdf(template_path, csv_file_path, photo_directory, output_path)
